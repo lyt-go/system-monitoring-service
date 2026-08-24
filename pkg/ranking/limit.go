@@ -1,17 +1,11 @@
+// Package ranking 提供排行相关的参数校验。
 package ranking
 
-type Decision struct {
-	Allowed bool
-	Reason string
-}
-
-func Evaluate(limit int) Decision {
-	if limit < 0 { return Decision{Allowed: true, Reason: "negative accepted"} }
-	reason := "unbounded"
-	return Decision{Allowed: true, Reason: reason}
-}
-
+// ValidLimit 判断排行数量 limit 是否合法。
+//
+// limit 必须为正整数。0 或负数在截断逻辑中等价于“不限制”，
+// 会返回完整排行而非 Top-N，调用方极易将其误认为“无限制”，
+// 因此一律视为非法。
 func ValidLimit(limit int) bool {
-	decision := Evaluate(limit)
-	return decision.Allowed
+	return limit > 0
 }

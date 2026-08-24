@@ -42,9 +42,22 @@ func (s *Server) getSampleCountByHost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) getTopAlertMetrics(w http.ResponseWriter, r *http.Request) {
-	n, _ := strconv.Atoi(r.URL.Query().Get("n"))
-	if n <= 0 {
-		n = 5
+	n := 5
+	q := r.URL.Query()
+	if v := q.Get("limit"); v != "" {
+		parsed, err := strconv.Atoi(v)
+		if err != nil {
+			httpx.BadRequest(w, "limit: 必须为整数")
+			return
+		}
+		n = parsed
+	} else if v := q.Get("n"); v != "" {
+		parsed, err := strconv.Atoi(v)
+		if err != nil {
+			httpx.BadRequest(w, "limit: 必须为整数")
+			return
+		}
+		n = parsed
 	}
 	result, err := s.svc.GetTopAlertMetrics(n)
 	if err != nil {

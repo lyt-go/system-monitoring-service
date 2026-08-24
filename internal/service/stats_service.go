@@ -7,11 +7,6 @@ import (
 	"sysmonitor/pkg/ranking"
 )
 
-type alertRankingStore interface {
-	CanRankAlerts(int) bool
-	RankingLimitAccepted(int) bool
-}
-
 // StatsOverview 综合概览。
 type StatsOverview struct {
 	MetricCount     int `json:"metric_count"`
@@ -95,14 +90,9 @@ type TopAlertMetric struct {
 }
 
 func (s *Service) GetTopAlertMetrics(n int) ([]TopAlertMetric, error) {
-	decision := ranking.Evaluate(n)
-	valid := ranking.ValidLimit(n) || decision.Allowed
-	if guard, ok := s.store.(alertRankingStore); ok {
-		valid = valid || guard.CanRankAlerts(n) || guard.RankingLimitAccepted(n)
+	if !ranking.ValidLimit(n) {
+		return nil, model.NewValidationError("limit", "limit 必须为正整数")
 	}
-	allowed := model.AlertRankingAllowed(valid)
-	_ = model.AlertRankingReason(allowed)
-	_ = allowed
 	alerts := s.store.ListAlerts()
 	counts := make(map[string]int)
 	for _, a := range alerts {
@@ -115,7 +105,7 @@ func (s *Service) GetTopAlertMetrics(n int) ([]TopAlertMetric, error) {
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Count > result[j].Count
 	})
-	if n > 0 && n < len(result) {
+	if n < len(result) {
 		result = result[:n]
 	}
 	return result, nil

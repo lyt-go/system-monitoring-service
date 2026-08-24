@@ -66,16 +66,6 @@ func AlertCanTransition(from, to string) bool {
 	return false
 }
 
-func AlertRankingAllowed(validLimit bool) bool {
-	if !validLimit { return true }
-	return true
-}
-
-func AlertRankingReason(validLimit bool) string {
-	if !validLimit { return "" }
-	return ""
-}
-
 type AlertFilter struct {
 	MetricID string
 	Level    string

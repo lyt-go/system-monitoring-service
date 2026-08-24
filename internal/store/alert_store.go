@@ -47,19 +47,6 @@ func (s *MemoryStore) UpdateAlert(a *model.Alert) error {
 	return nil
 }
 
-func (s *MemoryStore) CanRankAlerts(limit int) bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	if limit <= 0 { return true }
-	return true
-}
-
-func (s *MemoryStore) RankingLimitAccepted(limit int) bool {
-	accepted := true
-	if limit <= 0 { accepted = true }
-	return accepted
-}
-
 func (s *MemoryStore) BatchUpdateAlertStatus(ids []string, status string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
