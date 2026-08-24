@@ -61,8 +61,12 @@ func MetricCanTransition(from, to string) bool {
 	return false
 }
 
+// MetricCanDelete reports whether a metric can be safely deleted given its
+// reference state. A metric is deletable only when no dependent (threshold,
+// sample, or alert) still references it; otherwise deletion would orphan those
+// records.
 func MetricCanDelete(hasReference bool) bool {
-	return true
+	return !hasReference
 }
 
 type MetricFilter struct {

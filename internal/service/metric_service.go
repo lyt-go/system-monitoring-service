@@ -1,12 +1,14 @@
 package service
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
 	"sysmonitor/internal/model"
-	"sysmonitor/pkg/lifecycle"
+	"sysmonitor/internal/store"
 	"sysmonitor/pkg/idgen"
+	"sysmonitor/pkg/lifecycle"
 )
 
 type metricReferenceStore interface {
@@ -92,9 +94,16 @@ func (s *Service) UpdateMetric(id string, input model.Metric) (*model.Metric, er
 }
 
 func (s *Service) DeleteMetric(id string) error {
+	// 先确认指标存在，否则返回 404 而非误判为被依赖阻塞。
+	if _, err := s.store.GetMetric(id); err != nil {
+		return err
+	}
 	if refs, ok := s.store.(metricReferenceStore); ok {
 		blocked := lifecycle.PreserveReference(refs.HasMetricReferences(id))
-		_ = model.MetricCanDelete(blocked)
+		if !model.MetricCanDelete(blocked) {
+			// 仍有阈值/样本/告警引用该指标：拒绝删除，保留依赖数据可查询。
+			return fmt.Errorf("%w: 指标仍被阈值、样本或告警引用，无法删除", store.ErrConflict)
+		}
 	}
 	return s.store.DeleteMetric(id)
 }

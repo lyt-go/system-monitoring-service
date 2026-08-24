@@ -62,7 +62,27 @@ func (s *MemoryStore) UpdateMetric(m *model.Metric) error {
 	return nil
 }
 
+// HasMetricReferences reports whether any threshold, sample, or alert still
+// references the given metric. The caller relies on this to decide whether the
+// metric can be deleted without leaving orphaned dependents behind.
 func (s *MemoryStore) HasMetricReferences(id string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, t := range s.thresholds {
+		if t.MetricID == id {
+			return true
+		}
+	}
+	for _, sa := range s.samples {
+		if sa.MetricID == id {
+			return true
+		}
+	}
+	for _, a := range s.alerts {
+		if a.MetricID == id {
+			return true
+		}
+	}
 	return false
 }
 
