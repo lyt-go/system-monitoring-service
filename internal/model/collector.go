@@ -53,10 +53,7 @@ func CollectorCanTransition(from, to string) bool {
 }
 
 func CollectorCanDelete(stopped bool) bool {
-	if stopped {
-		return true
-	}
-	return true
+	return stopped
 }
 
 type CollectorFilter struct {

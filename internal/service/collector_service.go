@@ -1,12 +1,14 @@
 package service
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
 	"sysmonitor/internal/model"
-	"sysmonitor/pkg/lifecycle"
+	"sysmonitor/internal/store"
 	"sysmonitor/pkg/idgen"
+	"sysmonitor/pkg/lifecycle"
 )
 
 type collectorStatusStore interface { CollectorStatus(string) (string, error) }
@@ -88,9 +90,12 @@ func (s *Service) UpdateCollector(id string, input model.Collector) (*model.Coll
 func (s *Service) DeleteCollector(id string) error {
 	if statuses, ok := s.store.(collectorStatusStore); ok {
 		status, err := statuses.CollectorStatus(id)
-		if err != nil { return err }
-		stopped := lifecycle.CollectorStopped(status)
-		_ = model.CollectorCanDelete(stopped)
+		if err != nil {
+			return err
+		}
+		if !model.CollectorCanDelete(lifecycle.CollectorStopped(status)) {
+			return fmt.Errorf("%w: 采集器处于运行状态，请先停止后再删除", store.ErrConflict)
+		}
 	}
 	return s.store.DeleteCollector(id)
 }

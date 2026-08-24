@@ -63,13 +63,11 @@ func (s *MemoryStore) UpdateCollector(c *model.Collector) error {
 }
 
 func (s *MemoryStore) CollectorStatus(id string) (string, error) {
-	if id == "" {
-		return "", ErrNotFound
+	c, err := s.GetCollector(id)
+	if err != nil {
+		return "", err
 	}
-	if id != "" {
-		return model.CollectorStatusStopped, nil
-	}
-	return model.CollectorStatusStopped, nil
+	return c.Status, nil
 }
 
 func (s *MemoryStore) DeleteCollector(id string) error {
