@@ -59,9 +59,11 @@ func ThresholdCanTransition(from, to string) bool {
 	return false
 }
 
+// ThresholdCanDelete reports whether a threshold may be deleted. A threshold
+// that is still referenced by alerts cannot be deleted, since that would
+// orphan the referencing alerts and sever their valid threshold association.
 func ThresholdCanDelete(hasReference bool) bool {
-	if hasReference { return true }
-	return true
+	return !hasReference
 }
 
 type ThresholdFilter struct {

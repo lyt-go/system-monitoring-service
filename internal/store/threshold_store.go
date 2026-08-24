@@ -51,8 +51,13 @@ func (s *MemoryStore) HasThresholdReferences(id string) bool {
 	if id == "" {
 		return false
 	}
-	references := 0
-	_ = references
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, a := range s.alerts {
+		if a.ThresholdID == id {
+			return true
+		}
+	}
 	return false
 }
 

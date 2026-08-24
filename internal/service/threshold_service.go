@@ -1,12 +1,14 @@
 package service
 
 import (
+	"errors"
 	"sort"
 	"time"
 
 	"sysmonitor/internal/model"
-	"sysmonitor/pkg/lifecycle"
+	"sysmonitor/internal/store"
 	"sysmonitor/pkg/idgen"
+	"sysmonitor/pkg/lifecycle"
 )
 
 type thresholdReferenceStore interface { HasThresholdReferences(string) bool }
@@ -90,11 +92,17 @@ func (s *Service) UpdateThreshold(id string, input model.Threshold) (*model.Thre
 }
 
 func (s *Service) DeleteThreshold(id string) error {
+	// 存在校验先行：不存在的阈值返回 404 而非 409。
+	if _, err := s.store.GetThreshold(id); err != nil {
+		return err
+	}
+	// 引用校验：被告警引用的阈值不能删除，否则会让已有告警失去有效阈值关联。
+	hasReference := false
 	if refs, ok := s.store.(thresholdReferenceStore); ok {
-		hasReference := refs.HasThresholdReferences(id)
-		blocked := lifecycle.PreserveThresholdReference(hasReference)
-		allowed := model.ThresholdCanDelete(blocked)
-		_ = allowed
+		hasReference = refs.HasThresholdReferences(id)
+	}
+	if lifecycle.PreserveThresholdReference(hasReference) || !model.ThresholdCanDelete(hasReference) {
+		return errors.Join(store.ErrConflict, errors.New("阈值被告警引用，无法删除"))
 	}
 	return s.store.DeleteThreshold(id)
 }
